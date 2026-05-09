@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ede8dc">
+<title>Guess The Song</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --cream: #ede8dc;
+  --card:  #f2ede2;
+  --ink:   #1c1a17;
+  --accent:#7a6040;
+  --ok:    #6ab870;
+  --err:   #d96060;
+}
+html,body { height:100%; width:100%; }
+body {
+  background:var(--cream);
+  font-family:'Cormorant Garamond',serif;
+  display:flex; flex-direction:column; align-items:center;
+  min-height:100dvh; overflow-x:hidden; overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+}
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse at 15% 10%,rgba(160,130,80,.12) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 90%,rgba(140,120,70,.08) 0%,transparent 55%);
+}
+
+/* ── CASSETTE ── */
+.cassette-area {
+  position:relative; z-index:2; width:100%;
+  display:flex; justify-content:center;
+  padding-top:28px; flex-shrink:0;
+}
+.cassette {
+  position:relative; width:300px; height:188px;
+  background:linear-gradient(150deg,#d8d2c5 0%,#c4beb2 50%,#b0aa9e 100%);
+  border-radius:13px;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.5),inset 0 -2px 0 rgba(0,0,0,.12),
+             0 16px 40px rgba(0,0,0,.28),0 4px 10px rgba(0,0,0,.15);
+  border:1px solid rgba(255,255,255,.5);
+}
+.cassette::before {
+  content:''; position:absolute; inset:6px; border-radius:9px;
+  background-image:linear-gradient(rgba(0,0,0,.04) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(0,0,0,.04) 1px,transparent 1px);
+  background-size:6px 6px; pointer-events:none;
+}
+.c-label {
+  position:absolute; top:13px; left:50%; transform:translateX(-50%);
+  width:175px; height:60px;
+  background:linear-gradient(160deg,#f6f1e8 0%,#ebe4d4 100%);
+  border-radius:5px; box-shadow:0 2px 6px rgba(0,0,0,.22);
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+.c-label::before {
+  content:''; position:absolute; inset:0;
+  background:linear-gradient(rgba(0,0,0,.03) 1px,transparent 1px),
+             linear-gradient(90deg,rgba(0,0,0,.03) 1px,transparent 1px);
+  background-size:5px 5px;
+}
+.c-label-text {
+  font-family:'Playfair Display',serif; font-style:italic; font-size:16px;
+  color:var(--ink); text-align:center; line-height:1.15;
+  position:relative; z-index:1; padding:0 8px;
+}
+.tape-win {
+  position:absolute; top:81px; left:50%; transform:translateX(-50%);
+  width:116px; height:34px; background:#18140f; border-radius:3px;
+  box-shadow:0 0 0 2px #a09888,inset 0 3px 8px rgba(0,0,0,.9);
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+}
+.tape-film {
+  width:100%; height:8px;
+  background:repeating-linear-gradient(90deg,#18140f 0,#18140f 5px,#281e14 5px,#281e14 7px,#18140f 7px,#18140f 12px);
+}
+.spools {
+  position:absolute; top:87px; left:50%; transform:translateX(-50%);
+  width:143px; display:flex; justify-content:space-between; align-items:center;
+}
+.spool {
+  width:32px; height:32px;
+  background:radial-gradient(circle at 38% 32%,#d8d2c4 0%,#b0a898 55%,#908880 100%);
+  border-radius:50%;
+  box-shadow:0 2px 4px rgba(0,0,0,.3),inset 0 1px 2px rgba(255,255,255,.35);
+  display:flex; align-items:center; justify-content:center;
+}
+.spool::before {
+  content:''; width:10px; height:10px;
+  background:radial-gradient(circle at 38% 32%,#e0dcd0 0%,#c0b8a8 100%);
+  border-radius:50%; box-shadow:0 1px 3px rgba(0,0,0,.4);
+}
+.sl { animation:spin 2.5s linear infinite; animation-play-state:paused; }
+.sr { animation:spin 2.5s linear infinite reverse; animation-play-state:paused; }
+.cassette.playing .sl,.cassette.playing .sr { animation-play-state:running; }
+@keyframes spin { to{transform:rotate(360deg)} }
+
+.c-counter {
+  position:absolute; top:126px; left:50%; transform:translateX(-50%);
+  font-size:7px; color:#90806a; letter-spacing:6px; text-transform:uppercase; white-space:nowrap;
+}
+.c-wave {
+  position:absolute; bottom:38px; left:50%; transform:translateX(-50%);
+  display:flex; gap:2px; align-items:center; height:14px;
+  opacity:0; transition:opacity .3s;
+}
+.cassette.playing .c-wave { opacity:1; }
+.wb {
+  width:2px; background:var(--accent); border-radius:1px;
+  animation:wave .8s ease-in-out infinite;
+}
+.wb:nth-child(1){animation-delay:0s;height:3px}
+.wb:nth-child(2){animation-delay:.1s;height:7px}
+.wb:nth-child(3){animation-delay:.2s;height:12px}
+.wb:nth-child(4){animation-delay:.3s;height:9px}
+.wb:nth-child(5){animation-delay:.2s;height:12px}
+.wb:nth-child(6){animation-delay:.1s;height:7px}
+.wb:nth-child(7){animation-delay:0s;height:3px}
+@keyframes wave {0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+.c-btns {
+  position:absolute; bottom:13px; left:50%; transform:translateX(-50%);
+  display:flex; gap:7px;
+}
+.cbtn { width:15px; height:11px; background:linear-gradient(180deg,#c8c0b0,#a09880); border-radius:3px; box-shadow:0 2px 0 #706858,0 3px 4px rgba(0,0,0,.25); }
+.cbtn.w { width:20px; }
+
+/* ── CARD ── */
+.card-area {
+  position:relative; z-index:1; width:100%; max-width:360px;
+  padding:0 16px 40px;
+}
+.card {
+  background:var(--card); border-radius:0 0 14px 14px;
+  padding:26px 22px 26px;
+  box-shadow:0 12px 40px rgba(0,0,0,.18),0 3px 8px rgba(0,0,0,.1);
+  position:relative; overflow:hidden; margin-top:-1px;
+}
+.card::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(rgba(0,0,0,.022) 1px,transparent 1px),
+             linear-gradient(90deg,rgba(0,0,0,.022) 1px,transparent 1px);
+  background-size:8px 8px;
+}
+.screen { display:none; }
+.screen.active { display:block; }
+
+/* INTRO */
+.intro { text-align:center; padding:4px 0; }
+.i-eye {
+  font-family:'Playfair Display',serif; font-style:italic;
+  font-size:13px; color:var(--accent); letter-spacing:1px;
+  margin-bottom:12px; position:relative; z-index:1;
+}
+.i-head {
+  font-family:'Playfair Display',serif; font-style:italic;
+  font-size:42px; color:var(--ink); line-height:1;
+  margin-bottom:10px; position:relative; z-index:1;
+}
+.i-sub {
+  font-size:12px; letter-spacing:1px; color:var(--accent);
+  margin-bottom:24px; position:relative; z-index:1;
+}
+.play-btn {
+  width:68px; height:68px; border-radius:50%;
+  border:2px solid var(--ink); background:transparent;
+  display:inline-flex; align-items:center; justify-content:center;
+  cursor:pointer; color:var(--ink); position:relative; z-index:1;
+  transition:background .2s,color .2s,transform .12s;
+}
+.play-btn:active { transform:scale(.92); background:var(--ink); color:var(--cream); }
+.play-btn svg { width:26px; height:26px; fill:currentColor; margin-left:3px; }
+.i-hint {
+  font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+  color:var(--accent); margin-top:14px; position:relative; z-index:1;
+}
+
+/* QUESTION */
+.q-num {
+  font-family:'Playfair Display',serif; font-style:italic;
+  font-size:12px; color:var(--accent); margin-bottom:11px;
+  position:relative; z-index:1;
+}
+.q-txt {
+  font-size:16px; font-weight:700; color:var(--ink);
+  text-transform:uppercase; letter-spacing:.8px; line-height:1.45;
+  margin-bottom:20px; position:relative; z-index:1;
+}
+.opts {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:8px; position:relative; z-index:1;
+}
+.opt {
+  background:transparent; border:1.5px solid var(--ink); border-radius:5px;
+  padding:13px 8px; font-family:'Cormorant Garamond',serif;
+  font-size:13px; font-weight:700; color:var(--ink);
+  letter-spacing:.8px; text-transform:uppercase; cursor:pointer;
+  text-align:center; line-height:1.25; min-height:54px;
+  display:flex; align-items:center; justify-content:center;
+  -webkit-user-select:none; user-select:none;
+  transition:background .16s,border-color .16s,color .16s,transform .1s;
+}
+.opt:active:not(:disabled) { transform:scale(.95); }
+.opt.ok  { background:var(--ok);  border-color:var(--ok);  color:#fff; }
+.opt.err { background:var(--err); border-color:var(--err); color:#fff; }
+.opt:disabled { cursor:default; }
+
+/* now-playing strip */
+.np-strip {
+  display:none; align-items:center; gap:10px;
+  background:rgba(0,0,0,.04); border-radius:6px;
+  padding:10px 12px; margin-top:14px;
+  position:relative; z-index:1;
+}
+.np-strip.show { display:flex; }
+.np-bars { display:flex; gap:2px; align-items:center; height:16px; flex-shrink:0; }
+.np-bar {
+  width:2px; background:var(--accent); border-radius:1px;
+  animation:wave .8s ease-in-out infinite;
+}
+.np-bar:nth-child(1){height:4px;animation-delay:0s}
+.np-bar:nth-child(2){height:9px;animation-delay:.1s}
+.np-bar:nth-child(3){height:14px;animation-delay:.2s}
+.np-bar:nth-child(4){height:9px;animation-delay:.1s}
+.np-bar:nth-child(5){height:4px;animation-delay:0s}
+.np-info { flex:1; min-width:0; }
+.np-title {
+  font-weight:700; font-size:13px; color:var(--ink);
+  text-transform:uppercase; letter-spacing:.8px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.np-artist {
+  font-size:11px; color:var(--accent); letter-spacing:1px;
+  text-transform:uppercase; margin-top:1px;
+}
+.np-stop {
+  background:none; border:none; cursor:pointer; color:var(--accent);
+  font-size:18px; padding:4px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+}
+
+.feedback {
+  font-family:'Playfair Display',serif; font-style:italic;
+  font-size:15px; text-align:center; min-height:22px;
+  margin-top:12px; position:relative; z-index:1;
+}
+.next-btn {
+  display:none; width:100%; margin-top:12px;
+  background:var(--ink); color:var(--cream); border:none; border-radius:6px;
+  padding:16px; font-family:'Cormorant Garamond',serif;
+  font-size:14px; font-weight:700; letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer; position:relative; z-index:1;
+}
+.next-btn.show { display:block; }
+.next-btn:active { opacity:.75; }
+
+.dots {
+  display:flex; justify-content:center; gap:6px;
+  margin-top:14px; flex-wrap:wrap; position:relative; z-index:1;
+}
+.dot {
+  width:6px; height:6px; border-radius:50%;
+  background:rgba(0,0,0,.18); transition:background .3s;
+  flex-shrink:0;
+}
+.dot.active { background:var(--ink); }
+.dot.done   { background:var(--accent); }
+
+/* SCORE */
+.score-wrap { text-align:center; position:relative; z-index:1; }
+.s-label {
+  font-family:'Playfair Display',serif; font-style:italic;
+  font-size:16px; color:var(--accent); margin-bottom:6px;
+}
+.s-num { font-size:80px; font-weight:700; color:var(--ink); line-height:1; }
+.s-sub {
+  font-size:13px; letter-spacing:2px; text-transform:uppercase;
+  color:var(--ink); opacity:.45; margin-top:4px; margin-bottom:6px;
+}
+.s-msg {
+  font-family:'Playfair Display',serif; font-style:italic;
+  font-size:15px; color:var(--accent); margin-bottom:24px; min-height:22px;
+}
+.restart {
+  background:var(--ink); color:var(--cream); border:none; border-radius:6px;
+  padding:16px 36px; font-family:'Cormorant Garamond',serif;
+  font-size:14px; font-weight:700; letter-spacing:2px; text-transform:uppercase; cursor:pointer;
+}
+.restart:active { opacity:.75; }
+</style>
+</head>
+<body>
+
+<div class="cassette-area">
+  <div class="cassette" id="cass">
+    <div class="c-label"><div class="c-label-text" id="lblTitle">Guess The Song</div></div>
+    <div class="tape-win"><div class="tape-film"></div></div>
+    <div class="spools"><div class="spool sl"></div><div class="spool sr"></div></div>
+    <div class="c-counter">100 · 50 · 0</div>
+    <div class="c-wave">
+      <div class="wb"></div><div class="wb"></div><div class="wb"></div>
+      <div class="wb"></div><div class="wb"></div><div class="wb"></div><div class="wb"></div>
+    </div>
+    <div class="c-btns">
+      <div class="cbtn"></div><div class="cbtn w"></div>
+      <div class="cbtn w"></div><div class="cbtn"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card-area">
+  <div class="card">
+
+    <!-- INTRO -->
+    <div class="screen active" id="sIntro">
+      <div class="intro">
+        <div class="i-eye">▶ Bem-vindo</div>
+        <div class="i-head">Are You<br>Ready?</div>
+        <div class="i-sub">26 músicas · acerte o máximo</div>
+        <button class="play-btn" id="btnStart">
+          <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <div class="i-hint">Toque para começar</div>
+      </div>
+    </div>
+
+    <!-- QUESTION -->
+    <div class="screen" id="sQuestion">
+      <div class="q-num" id="qNum">Pergunta 1 de 26</div>
+      <div class="q-txt" id="qTxt"></div>
+      <div class="opts" id="opts"></div>
+      <div class="np-strip" id="npStrip">
+        <div class="np-bars">
+          <div class="np-bar"></div><div class="np-bar"></div>
+          <div class="np-bar"></div><div class="np-bar"></div><div class="np-bar"></div>
+        </div>
+        <div class="np-info">
+          <div class="np-title" id="npTitle"></div>
+          <div class="np-artist" id="npArtist"></div>
+        </div>
+        <button class="np-stop" id="btnStop" title="Parar">■</button>
+      </div>
+      <div class="feedback" id="fb"></div>
+      <button class="next-btn" id="btnNext">Próxima →</button>
+      <div class="dots" id="dots"></div>
+    </div>
+
+    <!-- SCORE -->
+    <div class="screen" id="sScore">
+      <div class="score-wrap">
+        <div class="s-label">Sua pontuação</div>
+        <div class="s-num" id="sNum">0</div>
+        <div class="s-sub" id="sSub">de 26 corretas</div>
+        <div class="s-msg" id="sMsg"></div>
+        <button class="restart" id="btnRestart">Jogar Novamente</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<audio id="player" preload="none"></audio>
+
+<script>
+// ── BANCO DE PERGUNTAS ────────────────────────────────────────
+// src = caminho relativo ao index.html (pasta musicas/)
+var Q = [
+  {
+    txt: 'QUAL É O NOME DA MÚSICA DO CHARLIE BROWN JR. QUE FALA SOBRE SAUDADE E ESPERA?',
+    opts: ['Ela Vai Voltar','Meu Novo Mundo','Pontes Indestrutíveis','Proibida pra Mim'],
+    ok: 0,
+    title: 'Ela Vai Voltar', artist: 'Charlie Brown Jr.',
+    src: 'musicas/Charlie Brown Jr. - Ela Vai Voltar.mp3'
+  },
+  {
+    txt: 'QUAL MÚSICA DO CHARLIE BROWN JR. TEM O TÍTULO QUE REMETE A UMA NOVA FASE DE VIDA?',
+    opts: ['Ela Vai Voltar','Meu Novo Mundo','Tamo Aí na Atividade','Dias de Luta'],
+    ok: 1,
+    title: 'Meu Novo Mundo', artist: 'Charlie Brown Jr.',
+    src: 'musicas/Charlie Brown Jr. - Meu Novo Mundo.mp3'
+  },
+  {
+    txt: '"PONTES INDESTRUTÍVEIS" É UMA MÚSICA DE QUAL BANDA?',
+    opts: ['Racionais MC\'s','Skank','Charlie Brown Jr.','CPM 22'],
+    ok: 2,
+    title: 'Pontes Indestrutíveis', artist: 'Charlie Brown Jr.',
+    src: 'musicas/Charlie Brown Jr. - Pontes Indestrutíveis.mp3'
+  },
+  {
+    txt: '"A BANDA" É UMA FAMOSA MÚSICA DE QUAL COMPOSITOR BRASILEIRO?',
+    opts: ['Gilberto Gil','Caetano Veloso','Roberto Carlos','Chico Buarque'],
+    ok: 3,
+    title: 'A Banda', artist: 'Chico Buarque',
+    src: 'musicas/Chico Buarque - A Banda.mp3'
+  },
+  {
+    txt: 'A MÚSICA "APESAR DE VOCÊ" DE CHICO BUARQUE FOI CENSURADA EM QUAL PERÍODO?',
+    opts: ['República Velha','Governo JK','Ditadura Militar','Redemocratização'],
+    ok: 2,
+    title: 'Apesar De Você', artist: 'Chico Buarque',
+    src: 'musicas/Chico Buarque - Apesar De Você.mp3'
+  },
+  {
+    txt: '"CONSTRUÇÃO" É CONSIDERADA UMA DAS MAIORES MÚSICAS DE QUAL ARTISTA?',
+    opts: ['Elis Regina','Tim Maia','Chico Buarque','Caetano Veloso'],
+    ok: 2,
+    title: 'Construção', artist: 'Chico Buarque',
+    src: 'musicas/Chico Buarque - Construção.mp3'
+  },
+  {
+    txt: '"COMO NOSSOS PAIS" É UMA MÚSICA INTERPRETADA POR QUAL ARTISTA?',
+    opts: ['Maria Bethânia','Gal Costa','Elis Regina','Simone'],
+    ok: 2,
+    title: 'Como Nossos Pais', artist: 'Elis Regina',
+    src: 'musicas/Elis Regina - Como Nossos Pais.mp3'
+  },
+  {
+    txt: '"AMOR E FÉ (ACÚSTICO)" É UMA MÚSICA DE QUAL ARTISTA DE RAP BRASILEIRO?',
+    opts: ['Emicida','Hungria','Criolo','Djonga'],
+    ok: 1,
+    title: 'Amor e Fé (Acústico)', artist: 'Hungria',
+    src: 'musicas/Hungria - Amor e Fé (Acústico).mp3'
+  },
+  {
+    txt: '"UM PEDIDO" É UMA MÚSICA ROMÂNTICA DE QUAL ARTISTA?',
+    opts: ['Projota','Hungria Hip Hop','Orochi','L7nnon'],
+    ok: 1,
+    title: 'Um Pedido', artist: 'Hungria Hip Hop',
+    src: 'musicas/Hungria Hip Hop - Um Pedido.mp3'
+  },
+  {
+    txt: '"OS ANJOS CANTAM" É UMA MÚSICA DA DUPLA SERTANEJA:',
+    opts: ['Bruno & Marrone','Zezé Di Camargo & Luciano','Jorge & Mateus','Henrique & Juliano'],
+    ok: 2,
+    title: 'Os Anjos Cantam', artist: 'Jorge & Mateus',
+    src: 'musicas/Jorge & Mateus - Os Anjos Cantam.mp3'
+  },
+  {
+    txt: '"PRA SEMPRE COM VOCÊ" É UMA MÚSICA DE QUAL DUPLA SERTANEJA?',
+    opts: ['César & Paulinho','João Neto & Frederico','Jorge & Mateus','Marcos & Belutti'],
+    ok: 2,
+    title: 'Pra Sempre Com Você', artist: 'Jorge & Mateus',
+    src: 'musicas/Jorge & Mateus - Pra Sempre Com Você (Ao Vivo).mp3'
+  },
+  {
+    txt: '"SEU ASTRAL" É UMA MÚSICA DE QUAL DUPLA?',
+    opts: ['Maiara & Maraisa','Jorge & Mateus','Fernando & Sorocaba','Luan Santana & Gustavo Lima'],
+    ok: 1,
+    title: 'Seu Astral', artist: 'Jorge & Mateus',
+    src: 'musicas/Jorge & Mateus - Seu Astral.mp3'
+  },
+  {
+    txt: '"STORY OF MY LIFE" É UMA MÚSICA DE QUAL BOY BAND?',
+    opts: ['Backstreet Boys','*NSYNC','One Direction','BTS'],
+    ok: 2,
+    title: 'Story of My Life', artist: 'One Direction',
+    src: 'musicas/One Direction - Story of My Life.mp3'
+  },
+  {
+    txt: '"WHAT MAKES YOU BEAUTIFUL" É O PRIMEIRO GRANDE HIT DE QUAL GRUPO?',
+    opts: ['Jonas Brothers','The Wanted','One Direction','Big Time Rush'],
+    ok: 2,
+    title: 'What Makes You Beautiful', artist: 'One Direction',
+    src: 'musicas/One Direction - What Makes You Beautiful.mp3'
+  },
+  {
+    txt: '"BURGUESINHA" É UMA MÚSICA DE QUAL ARTISTA CARIOCA?',
+    opts: ['Marcelo D2','Seu Jorge','BNegão','Dexter'],
+    ok: 1,
+    title: 'Burguesinha', artist: 'Seu Jorge',
+    src: 'musicas/Seu Jorge - Burguesinha.mp3'
+  },
+  {
+    txt: '"MINA DO CONDOMÍNIO" É UMA MÚSICA DE QUAL ARTISTA?',
+    opts: ['Criolo','Emicida','Seu Jorge','Racionais MC\'s'],
+    ok: 2,
+    title: 'Mina do Condomínio', artist: 'Seu Jorge',
+    src: 'musicas/Seu Jorge - Mina do Condomínio.mp3'
+  },
+  {
+    txt: '"AZUL DA COR DO MAR" É UMA MÚSICA DE QUAL ÍCONE DA MÚSICA BRASILEIRA?',
+    opts: ['Jorge Ben Jor','Djavan','Tim Maia','Luiz Melodia'],
+    ok: 2,
+    title: 'Azul Da Cor Do Mar', artist: 'Tim Maia',
+    src: 'musicas/Tim Maia - Azul Da Cor Do Mar.mp3'
+  },
+  {
+    txt: '"GOSTAVA TANTO DE VOCÊ" É UMA CLÁSSICA MÚSICA DE QUAL ARTISTA?',
+    opts: ['Roberto Carlos','Erasmo Carlos','Tim Maia','Agnaldo Timóteo'],
+    ok: 2,
+    title: 'Gostava Tanto De Você', artist: 'Tim Maia',
+    src: 'musicas/Tim Maia - Gostava Tanto De Você.mp3'
+  },
+  {
+    txt: '"ÁGUAS DE MARÇO" É UMA DAS MÚSICAS MAIS FAMOSAS DE QUAL COMPOSITOR?',
+    opts: ['João Gilberto','Vinícius de Moraes','Antonio Carlos Jobim','Dorival Caymmi'],
+    ok: 2,
+    title: 'Águas De Março', artist: 'Antonio Carlos Jobim',
+    src: 'musicas/Antonio Carlos Jobim - Águas De Março.mp3'
+  },
+  {
+    txt: '"POR VOCÊ" É UMA MÚSICA DA BANDA DE ROCK BRASILEIRO:',
+    opts: ['Os Paralamas do Sucesso','Titãs','Barão Vermelho','Legião Urbana'],
+    ok: 2,
+    title: 'Por você', artist: 'Barão Vermelho',
+    src: 'musicas/Barão Vermelho - Por você.mp3'
+  },
+  {
+    txt: '"IT\'S MY LIFE" É UMA MÚSICA DA BANDA DE ROCK:',
+    opts: ['Aerosmith','Bon Jovi','Guns N\' Roses','Def Leppard'],
+    ok: 1,
+    title: "It's My Life", artist: 'Bon Jovi',
+    src: "musicas/Bon Jovi - It's My Life.mp3"
+  },
+  {
+    txt: '"LIVIN\' ON A PRAYER" É UM CLÁSSICO ROCK DE QUAL BANDA?',
+    opts: ['Journey','Foreigner','Bon Jovi','Europe'],
+    ok: 2,
+    title: "Livin' On A Prayer", artist: 'Bon Jovi',
+    src: "musicas/Bon Jovi - Livin' On A Prayer.mp3"
+  },
+  {
+    txt: '"YOU GIVE LOVE A BAD NAME" FOI LANÇADA PELO BON JOVI EM QUAL DÉCADA?',
+    opts: ['1970','1980','1990','2000'],
+    ok: 1,
+    title: 'You Give Love A Bad Name', artist: 'Bon Jovi',
+    src: 'musicas/Bon Jovi - You Give Love A Bad Name.mp3'
+  },
+  {
+    txt: '"EXAGERADO" É UMA FAMOSA MÚSICA DE QUAL ROCKEIRO BRASILEIRO?',
+    opts: ['Renato Russo','Raul Seixas','Cazuza','Herbert Vianna'],
+    ok: 2,
+    title: 'Exagerado', artist: 'Cazuza',
+    src: 'musicas/Cazuza - Exagerado.mp3'
+  },
+  {
+    txt: '"IDEOLOGIA" É UMA MÚSICA DO ÁLBUM HOMÔNIMO DE:',
+    opts: ['Lobão','Cazuza','Paralamas','Titãs'],
+    ok: 1,
+    title: 'Ideologia', artist: 'Cazuza',
+    src: 'musicas/Cazuza - Ideologia.mp3'
+  },
+  {
+    txt: '"O TEMPO NÃO PÁRA" É UMA MÚSICA ICÔNICA DE QUAL ARTISTA BRASILEIRO?',
+    opts: ['Renato Russo','Cazuza','Nando Reis','Dado Villa-Lobos'],
+    ok: 1,
+    title: 'O Tempo Não Pára', artist: 'Cazuza',
+    src: 'musicas/Cazuza - O Tempo Não Pára.mp3'
+  }
+];
+
+// embaralha as perguntas a cada jogo
+function shuffle(arr) {
+  for (var i = arr.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+
+// ── STATE ─────────────────────────────────
+var questions = [];
+var curQ = 0, score = 0, answered = false;
+var audio = document.getElementById('player');
+
+// ── AUDIO ─────────────────────────────────
+function playTrack(src, title, artist) {
+  audio.pause();
+  audio.src = src;
+  audio.load();
+  audio.play().catch(function(){});
+  document.getElementById('cass').classList.add('playing');
+  document.getElementById('npTitle').textContent = title;
+  document.getElementById('npArtist').textContent = artist;
+  document.getElementById('npStrip').classList.add('show');
+}
+
+function stopTrack() {
+  audio.pause();
+  audio.src = '';
+  document.getElementById('cass').classList.remove('playing');
+  document.getElementById('npStrip').classList.remove('show');
+}
+
+audio.addEventListener('ended', function() {
+  document.getElementById('cass').classList.remove('playing');
+});
+
+// ── SCREENS ───────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+// ── QUIZ ──────────────────────────────────
+function startQuiz() {
+  questions = shuffle(Q.slice());
+  curQ = 0; score = 0;
+  renderQ();
+  show('sQuestion');
+}
+
+var ROUND_LABELS = ['Round 1','Round 2','Round 3','Round 4','Round 5',
+  'Round 6','Round 7','Round 8','Round 9','Round 10',
+  'Round 11','Round 12','Round 13','Round 14','Round 15',
+  'Round 16','Round 17','Round 18','Round 19','Round 20',
+  'Round 21','Round 22','Round 23','Round 24','Round 25','Final Round'];
+
+function renderQ() {
+  answered = false;
+  stopTrack();
+  var q = questions[curQ];
+
+  document.getElementById('qNum').textContent = 'Pergunta ' + (curQ+1) + ' de ' + questions.length;
+  document.getElementById('qTxt').textContent = q.txt;
+  document.getElementById('fb').textContent = '';
+  document.getElementById('fb').style.color = '';
+  document.getElementById('btnNext').classList.remove('show');
+  document.getElementById('lblTitle').textContent = ROUND_LABELS[curQ] || 'Guess The Song';
+
+  // dots — mostra apenas 10 por vez em volta do atual
+  var dotsEl = document.getElementById('dots');
+  dotsEl.innerHTML = '';
+  var total = questions.length;
+  var start = Math.max(0, Math.min(curQ - 4, total - 10));
+  var end   = Math.min(total, start + 10);
+  for (var i = start; i < end; i++) {
+    var d = document.createElement('div');
+    d.className = 'dot' + (i===curQ?' active':(i<curQ?' done':''));
+    dotsEl.appendChild(d);
+  }
+
+  // embaralha opções para variar posição
+  var letters = ['A','B','C','D'];
+  var optsEl = document.getElementById('opts');
+  optsEl.innerHTML = '';
+  q.opts.forEach(function(txt, i) {
+    var btn = document.createElement('button');
+    btn.className = 'opt';
+    btn.textContent = letters[i] + '. ' + txt;
+    btn.setAttribute('data-i', i);
+    optsEl.appendChild(btn);
+  });
+}
+
+function pick(idx) {
+  if (answered) return;
+  answered = true;
+  var q = questions[curQ];
+  var btns = document.querySelectorAll('.opt');
+  btns.forEach(function(b){ b.disabled = true; });
+
+  var fb = document.getElementById('fb');
+  if (idx === q.ok) {
+    btns[idx].classList.add('ok');
+    score++;
+    fb.textContent = '✓ Correto!';
+    fb.style.color = '#4a9e50';
+  } else {
+    btns[idx].classList.add('err');
+    btns[q.ok].classList.add('ok');
+    fb.textContent = '✗ Errado — ' + q.opts[q.ok];
+    fb.style.color = '#b04040';
+  }
+
+  playTrack(q.src, q.title, q.artist);
+  document.getElementById('btnNext').classList.add('show');
+}
+
+function nextQ() {
+  curQ++;
+  if (curQ >= questions.length) {
+    finish();
+  } else {
+    renderQ();
+  }
+}
+
+var MSGS = [
+  '😅 Hora de ouvir mais música!',
+  '🎧 Continue explorando playlists!',
+  '🎵 Bom esforço, continue ouvindo.',
+  '🎶 Está no caminho certo!',
+  '😊 Metade certa, nada mal!',
+  '🎤 Acima da média, legal!',
+  '🎸 Bom conhecimento musical!',
+  '🎹 Muito bem, grande fã!',
+  '🎺 Excelente! Ama música de verdade!',
+  '🌟 Quase perfeito, incrível!',
+  '🏆 Perfeito! Expert musical absoluto!'
+];
+
+function finish() {
+  stopTrack();
+  document.getElementById('sNum').textContent = score;
+  document.getElementById('sSub').textContent = 'de ' + questions.length + ' corretas';
+  var idx = Math.round((score / questions.length) * (MSGS.length - 1));
+  document.getElementById('sMsg').textContent = MSGS[idx];
+  document.getElementById('lblTitle').textContent = 'Fim do Jogo';
+  show('sScore');
+}
+
+function restart() {
+  stopTrack();
+  document.getElementById('lblTitle').textContent = 'Guess The Song';
+  show('sIntro');
+}
+
+// ── EVENTS ────────────────────────────────
+document.getElementById('btnStart').addEventListener('click', startQuiz);
+document.getElementById('btnNext').addEventListener('click', nextQ);
+document.getElementById('btnRestart').addEventListener('click', restart);
+document.getElementById('btnStop').addEventListener('click', stopTrack);
+
+document.getElementById('opts').addEventListener('click', function(e) {
+  var b = e.target.closest('.opt');
+  if (b && !b.disabled) pick(parseInt(b.getAttribute('data-i'), 10));
+});
+
+// ── SERVICE WORKER ────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
